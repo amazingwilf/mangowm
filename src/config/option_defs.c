@@ -915,6 +915,17 @@ bool parse_option(Config *config, char *key, char *value, int line_number) {
 		} else {
 			convert_hex_to_rgba(config->bordercolor, color);
 		}
+	} else if (strcmp(key, "floating_color") == 0) {
+		int64_t color = parse_color(value);
+		if (color == -1) {
+			mango_error(false, WLR_ERROR,
+						"Invalid floatingcolor "
+						"format: \033[1m\033[31m%s\033[0m\n",
+						value);
+			return false;
+		} else {
+			convert_hex_to_rgba(config->floatingcolor, color);
+		}
 	} else if (strcmp(key, "drop_color") == 0) {
 		int64_t color = parse_color(value);
 		if (color == -1) {
@@ -2564,6 +2575,10 @@ void set_value_default() {
 	config.bordercolor[1] = 0x44 / 255.0f;
 	config.bordercolor[2] = 0x44 / 255.0f;
 	config.bordercolor[3] = 1.0f;
+	config.floatingcolor[0] = 0x89 / 255.0f;
+	config.floatingcolor[1] = 0xb4 / 255.0f;
+	config.floatingcolor[2] = 0xfa / 255.0f;
+	config.floatingcolor[3] = 1.0f;
 	config.dropcolor[0] = 0xd5 / 255.0f;
 	config.dropcolor[1] = 0x89 / 255.0f;
 	config.dropcolor[2] = 0x9d / 255.0f;

@@ -906,9 +906,22 @@ int32_t set_layout(const Arg *arg) {
 
 	for (jk = 0; jk < LENGTH(layouts); jk++) {
 		if (strcmp(layouts[jk].name, arg->v) == 0) {
-			server.selected_monitor->pertag
-				->ltidxs[get_mon_curtag(server.selected_monitor)] =
-				&layouts[jk];
+			Monitor *m = server.selected_monitor;
+			uint32_t tag = get_mon_curtag(m);
+			const Layout *current = m->pertag->ltidxs[tag];
+			const Layout *requested = &layouts[jk];
+
+			if (current == requested) {
+				/* Repeating the same binding restores the previous layout. */
+				const Layout *previous = m->pertag->prev_ltidxs[tag];
+				if (!previous || previous == current)
+					return 0;
+				m->pertag->ltidxs[tag] = previous;
+				m->pertag->prev_ltidxs[tag] = current;
+			} else {
+				m->pertag->prev_ltidxs[tag] = current;
+				m->pertag->ltidxs[tag] = requested;
+			}
 			clear_fullscreen_and_maximized_state(server.selected_monitor);
 			arrange(server.selected_monitor, false, false);
 			printstatus(IPC_WATCH_ARRANGGE);

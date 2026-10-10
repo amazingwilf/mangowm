@@ -26,6 +26,9 @@ root_color=0x323232ff
 # Inactive window border
 border_color=0x444444ff
 
+# Floating window border
+floating_color=0x89b4faff
+
 # Drop shadow when dragging windows
 drop_color=0x8FBA7C55
 

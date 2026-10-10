@@ -802,6 +802,7 @@ void handle_new_output(struct wl_listener *listener, void *data) {
 		m->pertag->nmasters[i] = config.default_nmaster;
 		m->pertag->mfacts[i] = config.default_mfact;
 		m->pertag->ltidxs[i] = &layouts[0];
+		m->pertag->prev_ltidxs[i] = &layouts[0];
 	}
 
 	// Applies the tag rule.

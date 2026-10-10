@@ -1,0 +1,130 @@
+diff -ruN '--exclude=.git' /mnt/data/mango175-base/assets/config.conf b/assets/config.conf
+--- a/assets/config.conf	2026-10-07 15:53:10.000000000 +0000
++++ b/assets/config.conf	2026-10-07 16:14:29.752547798 +0000
+@@ -138,6 +138,7 @@
+ border_px=4
+ root_color=0x201b14ff
+ border_color=0x444444ff
++floating_color=0x89b4faff
+ drop_color=0x8FBA7C55
+ split_color=0xEB441EFF
+ focus_color=0xc9b890ff
+diff -ruN '--exclude=.git' /mnt/data/mango175-base/docs/visuals/theming.md b/docs/visuals/theming.md
+--- a/docs/visuals/theming.md	2026-10-07 15:53:10.000000000 +0000
++++ b/docs/visuals/theming.md	2026-10-07 16:14:29.752665555 +0000
+@@ -26,6 +26,9 @@
+ # Inactive window border
+ border_color=0x444444ff
+ 
++# Floating window border
++floating_color=0x89b4faff
++
+ # Drop shadow when dragging windows
+ drop_color=0x8FBA7C55
+ 
+diff -ruN '--exclude=.git' /mnt/data/mango175-base/include/mango/config/parse.h b/include/mango/config/parse.h
+--- a/include/mango/config/parse.h	2026-10-07 15:53:10.000000000 +0000
++++ b/include/mango/config/parse.h	2026-10-07 16:14:29.752755201 +0000
+@@ -496,6 +496,7 @@
+ 	float special_dim;
+ 	float rootcolor[4];
+ 	float bordercolor[4];
++	float floatingcolor[4];
+ 	float dropcolor[4];
+ 	float splitcolor[4];
+ 	float focuscolor[4];
+diff -ruN '--exclude=.git' /mnt/data/mango175-base/src/animation/client.c b/src/animation/client.c
+--- a/src/animation/client.c	2026-10-07 15:53:10.000000000 +0000
++++ b/src/animation/client.c	2026-10-07 16:14:29.753791655 +0000
+@@ -298,8 +298,9 @@
+ 	if (c == server.grab_client)
+ 		data.should_scale = false;
+ 
+-	if (c->isfullscreen || (config.no_radius_when_single && c->mon &&
+-							c->mon->visible_tiling_clients == 1))
++	if (c->isfullscreen ||
++		(!c->isfloating && config.no_radius_when_single && c->mon &&
++		 c->mon->visible_tiling_clients == 1))
+ 		data.corner_location = corner_radii_none();
+ 
+ 	if (config.blur && !c->no_blur)
+@@ -331,8 +332,9 @@
+ 
+ 	bool hit_no_border = check_hit_no_border(c);
+ 	struct fx_corner_radii current_corner_location =
+-		c->isfullscreen || (config.no_radius_when_single && c->mon &&
+-							c->mon->visible_tiling_clients == 1)
++		c->isfullscreen ||
++		(!c->isfloating && config.no_radius_when_single && c->mon &&
++		 c->mon->visible_tiling_clients == 1)
+ 			? corner_radii_none()
+ 			: set_client_corner_location(c);
+ 
+@@ -563,8 +565,9 @@
+ 	}
+ 
+ 	int32_t radius = 0;
+-	if (!c->isfullscreen && !(config.no_radius_when_single && c->mon &&
+-							  c->mon->visible_tiling_clients == 1)) {
++	if (!c->isfullscreen &&
++		!(!c->isfloating && config.no_radius_when_single && c->mon &&
++		  c->mon->visible_tiling_clients == 1)) {
+ 		radius = config.border_radius;
+ 	}
+ 
+@@ -711,8 +714,9 @@
+ 	client_draw_split_border(c, hit_no_border, offsets);
+ 
+ 	struct fx_corner_radii current_corner_location =
+-		c->isfullscreen || (config.no_radius_when_single && c->mon &&
+-							c->mon->visible_tiling_clients == 1)
++		c->isfullscreen ||
++		(!c->isfloating && config.no_radius_when_single && c->mon &&
++		 c->mon->visible_tiling_clients == 1)
+ 			? corner_radii_none()
+ 			: set_client_corner_location(c);
+ 
+diff -ruN '--exclude=.git' /mnt/data/mango175-base/src/config/option_defs.c b/src/config/option_defs.c
+--- a/src/config/option_defs.c	2026-10-07 15:53:10.000000000 +0000
++++ b/src/config/option_defs.c	2026-10-07 16:14:29.753451341 +0000
+@@ -915,6 +915,17 @@
+ 		} else {
+ 			convert_hex_to_rgba(config->bordercolor, color);
+ 		}
++	} else if (strcmp(key, "floating_color") == 0) {
++		int64_t color = parse_color(value);
++		if (color == -1) {
++			mango_error(false, WLR_ERROR,
++						"Invalid floatingcolor "
++						"format: \033[1m\033[31m%s\033[0m\n",
++						value);
++			return false;
++		} else {
++			convert_hex_to_rgba(config->floatingcolor, color);
++		}
+ 	} else if (strcmp(key, "drop_color") == 0) {
+ 		int64_t color = parse_color(value);
+ 		if (color == -1) {
+@@ -2557,6 +2568,10 @@
+ 	config.bordercolor[1] = 0x44 / 255.0f;
+ 	config.bordercolor[2] = 0x44 / 255.0f;
+ 	config.bordercolor[3] = 1.0f;
++	config.floatingcolor[0] = 0x89 / 255.0f;
++	config.floatingcolor[1] = 0xb4 / 255.0f;
++	config.floatingcolor[2] = 0xfa / 255.0f;
++	config.floatingcolor[3] = 1.0f;
+ 	config.dropcolor[0] = 0xd5 / 255.0f;
+ 	config.dropcolor[1] = 0x89 / 255.0f;
+ 	config.dropcolor[2] = 0x9d / 255.0f;
+diff -ruN '--exclude=.git' /mnt/data/mango175-base/src/manage/client.c b/src/manage/client.c
+--- a/src/manage/client.c	2026-10-07 15:53:10.000000000 +0000
++++ b/src/manage/client.c	2026-10-07 16:14:29.753665745 +0000
+@@ -1231,6 +1231,8 @@
+ 	} else if (c->ismaximizescreen && server.selected_monitor &&
+ 			   c == server.selected_monitor->sel) {
+ 		return config.maximizescreencolor;
++	} else if (c->isfloating) {
++		return config.floatingcolor;
+ 	} else if (server.selected_monitor && c == server.selected_monitor->sel) {
+ 		return config.focuscolor;
+ 	} else {

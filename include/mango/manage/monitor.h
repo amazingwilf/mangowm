@@ -107,6 +107,7 @@ struct Pertag {
 	struct DwindleNode *dwindle_root[PERTAG_SLOTS];
 	const Layout *config_ltidxs[PERTAG_SLOTS];
 	const Layout *ltidxs[PERTAG_SLOTS];
+	const Layout *prev_ltidxs[PERTAG_SLOTS];
 	struct TagScrollerState *scroller_state[PERTAG_SLOTS];
 };
 

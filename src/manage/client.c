@@ -1231,6 +1231,8 @@ float *get_border_color(Client *c) {
 	} else if (c->ismaximizescreen && server.selected_monitor &&
 			   c == server.selected_monitor->sel) {
 		return config.maximizescreencolor;
+	} else if (c->isfloating) {
+		return config.floatingcolor;
 	} else if (server.selected_monitor && c == server.selected_monitor->sel) {
 		return config.focuscolor;
 	} else {

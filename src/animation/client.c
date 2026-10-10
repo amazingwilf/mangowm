@@ -299,8 +299,9 @@ void buffer_set_effect(Client *c, BufferData data) {
 	if (c == server.grab_client)
 		data.should_scale = false;
 
-	if (c->isfullscreen || (config.no_radius_when_single && c->mon &&
-							c->mon->visible_tiling_clients == 1))
+	if (c->isfullscreen ||
+		(!c->isfloating && config.no_radius_when_single && c->mon &&
+		 c->mon->visible_tiling_clients == 1))
 		data.corner_location = corner_radii_none();
 
 	if (config.blur && !c->no_blur)
@@ -330,10 +331,11 @@ void client_draw_shadow(Client *c, struct ivec2 offsets) {
 			wlr_scene_node_set_enabled(&c->shadow->node, true);
 	}
 
-	bool hit_no_border = check_hit_no_border(c);
+	bool hit_no_border = ISTILED(c) && check_hit_no_border(c);
 	struct fx_corner_radii current_corner_location =
-		c->isfullscreen || (config.no_radius_when_single && c->mon &&
-							c->mon->visible_tiling_clients == 1)
+		c->isfullscreen ||
+		(!c->isfloating && config.no_radius_when_single && c->mon &&
+		 c->mon->visible_tiling_clients == 1)
 			? corner_radii_none()
 			: set_client_corner_location(c);
 
@@ -564,8 +566,9 @@ void client_draw_dim(Client *c, struct ivec2 clip_box) {
 	}
 
 	int32_t radius = 0;
-	if (!c->isfullscreen && !(config.no_radius_when_single && c->mon &&
-							  c->mon->visible_tiling_clients == 1)) {
+	if (!c->isfullscreen &&
+		!(!c->isfloating && config.no_radius_when_single && c->mon &&
+		  c->mon->visible_tiling_clients == 1)) {
 		radius = config.border_radius;
 	}
 
@@ -708,12 +711,13 @@ void client_draw_border(Client *c, struct ivec2 offsets) {
 			wlr_scene_node_set_enabled(&c->border->node, true);
 	}
 
-	bool hit_no_border = check_hit_no_border(c);
+	bool hit_no_border = ISTILED(c) && check_hit_no_border(c);
 	client_draw_split_border(c, hit_no_border, offsets);
 
 	struct fx_corner_radii current_corner_location =
-		c->isfullscreen || (config.no_radius_when_single && c->mon &&
-							c->mon->visible_tiling_clients == 1)
+		c->isfullscreen ||
+		(!c->isfloating && config.no_radius_when_single && c->mon &&
+		 c->mon->visible_tiling_clients == 1)
 			? corner_radii_none()
 			: set_client_corner_location(c);
 
@@ -1581,7 +1585,7 @@ void resize(Client *c, struct wlr_box geo, ResizeOpts opts) {
 	else if (!c->isfullscreen)
 		c->bw = config.borderpx;
 
-	bool hit_no_border = check_hit_no_border(c);
+	bool hit_no_border = ISTILED(c) && check_hit_no_border(c);
 	if (hit_no_border) {
 		c->bw = 0;
 		c->fake_no_border = true;

@@ -492,8 +492,10 @@ void parse_tagrule(Monitor *m) {
 	}
 
 	for (i = 0; i <= config.tag_num; i++) {
-		if (prev_config_ltidxs[i] != m->pertag->config_ltidxs[i])
+		if (prev_config_ltidxs[i] != m->pertag->config_ltidxs[i]) {
 			m->pertag->ltidxs[i] = m->pertag->config_ltidxs[i];
+			m->pertag->prev_ltidxs[i] = m->pertag->ltidxs[i];
+		}
 	}
 
 	for (i = 1; i <= config.tag_num; i++) {
